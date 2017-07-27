@@ -189,6 +189,11 @@
 		    <artifactId>poi-ooxml</artifactId>		<!--$POI excel use$ -->
 		    <version>3.14</version>
 		</dependency>
+	  <dependency>
+		  <groupId>org.owasp.antisamy</groupId>
+		  <artifactId>antisamy</artifactId>
+		  <version>1.5.5</version>
+	  </dependency>
   </dependencies>
   
   <build>
