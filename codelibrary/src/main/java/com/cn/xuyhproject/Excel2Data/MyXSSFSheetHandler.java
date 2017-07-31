@@ -26,9 +26,9 @@ import java.util.List;
 
 public class MyXSSFSheetHandler extends DefaultHandler {
 
-    enum xssfDataType {
-        BOOL, ERROR, FORMULA, INLINESTR, SSTINDEX, NUMBER,
-    }
+//    enum xssfDataType {
+//        BOOL, ERROR, FORMULA, INLINESTR, SSTINDEX, NUMBER,
+//    }
     /**
      * Table with styles
      */
@@ -54,7 +54,7 @@ public class MyXSSFSheetHandler extends DefaultHandler {
 
     // Set when cell start element is seen;
     // used when cell close element is seen.
-    private MyXSSFSheetHandler.xssfDataType nextDataType;
+    private XSSFDataType nextDataType;
 
     // Used to format numeric cell values.
     private short formatIndex;
@@ -89,7 +89,7 @@ public class MyXSSFSheetHandler extends DefaultHandler {
         this.minColumnCount = cols;
         this.output = target;
         this.value = new StringBuffer();
-        this.nextDataType = MyXSSFSheetHandler.xssfDataType.NUMBER;
+        this.nextDataType = XSSFDataType.NUMBER;
         this.formatter = new DataFormatter();
         record = new String[this.minColumnCount];
         rows.clear();// 每次读取都清空行集合
@@ -123,21 +123,21 @@ public class MyXSSFSheetHandler extends DefaultHandler {
             thisColumn = nameToColumn(r.substring(0, firstDigit));
 
             // Set up defaults.
-            this.nextDataType = MyXSSFSheetHandler.xssfDataType.NUMBER;
+            this.nextDataType = XSSFDataType.NUMBER;
             this.formatIndex = -1;
             this.formatString = null;
             String cellType = attributes.getValue("t");
             String cellStyleStr = attributes.getValue("s");
             if ("b".equals(cellType))
-                nextDataType = MyXSSFSheetHandler.xssfDataType.BOOL;
+                nextDataType = XSSFDataType.BOOL;
             else if ("e".equals(cellType))
-                nextDataType = MyXSSFSheetHandler.xssfDataType.ERROR;
+                nextDataType = XSSFDataType.ERROR;
             else if ("inlineStr".equals(cellType))
-                nextDataType = MyXSSFSheetHandler.xssfDataType.INLINESTR;
+                nextDataType = XSSFDataType.INLINESTR;
             else if ("s".equals(cellType))
-                nextDataType = MyXSSFSheetHandler.xssfDataType.SSTINDEX;
+                nextDataType = XSSFDataType.SSTINDEX;
             else if ("str".equals(cellType))
-                nextDataType = MyXSSFSheetHandler.xssfDataType.FORMULA;
+                nextDataType = XSSFDataType.FORMULA;
             else if (cellStyleStr != null) {
                 // It's a number, but almost certainly one
                 // with a special style or format
