@@ -24,7 +24,7 @@ public class NumberUtils {
     }
 
     public static String numFormat(String pFormatNum){
-        return String.valueOf(numFormat(pFormatNum, 2)); // 经测试小数位最大为四位大于四取四位
+        return numFormat(pFormatNum, 2); // 经测试小数位最大为四位大于四取四位
     }
 
     public static String numFormat(String pFormatNum, int pLength){
