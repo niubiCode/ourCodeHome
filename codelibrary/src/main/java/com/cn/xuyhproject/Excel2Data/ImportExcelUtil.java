@@ -78,7 +78,6 @@ public class ImportExcelUtil {
 
         StylesTable              styles = xssfReader.getStylesTable();
         XSSFReader.SheetIterator iter   = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
-        int index = 0;
         while (iter.hasNext()) {
             InputStream stream          = iter.next();
             String      sheetNameTemp   = iter.getSheetName();
@@ -92,7 +91,6 @@ public class ImportExcelUtil {
                 stream.close();
             }
             excelDataList.add(sheetDatalist);
-            index ++;
         }
         return excelDataList;
     }
