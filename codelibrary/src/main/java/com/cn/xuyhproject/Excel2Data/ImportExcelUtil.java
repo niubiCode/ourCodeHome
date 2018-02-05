@@ -13,84 +13,118 @@ import org.xml.sax.XMLReader;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author 山人
+ * @author xuyh
  * @Description: Excel导入，支持2007以上版本，文件后缀.xlsx的文档，支持数据量大的处理
- * @Date: 2017/7/26
+ * @Date: 2018/2/5
  * @Version:
  */
-
 public class ImportExcelUtil {
 
-    private OPCPackage xlsxPackage;
-    private int minColumns;
-    private PrintStream output;
-    private String sheetName;
+    private OPCPackage  xlsxPackage = null;
+    private String      sheetName   = "";
 
-    public ImportExcelUtil(OPCPackage pkg, PrintStream output, String sheetName, int minColumns) {
+    public ImportExcelUtil(OPCPackage pkg, String sheetName) {
         this.xlsxPackage = pkg;
-        this.output = output;
-        this.minColumns = minColumns;
-        this.sheetName = sheetName;
+        this.sheetName   = sheetName;
     }
 
-    public static ImportExcelUtil getInstance(OPCPackage pkg, String sheetName, int minColumns){
-        return new ImportExcelUtil(pkg, System.out, sheetName, minColumns);
+    public static ImportExcelUtil getInstance(OPCPackage pkg, String sheetName){
+        return new ImportExcelUtil(pkg, sheetName);
     }
 
-    private static List<List<String[]>> readerExcel(String path, String sheetName, int minColumns) throws IOException, OpenXML4JException, ParserConfigurationException, SAXException {
-        OPCPackage opcPackage = OPCPackage.open(path, PackageAccess.READ);
-        ImportExcelUtil importExcel = getInstance(opcPackage, sheetName, minColumns);
-        List<List<String[]>> list = importExcel.process();
+    /**
+     * 读取xlsx文件
+     * @param path 文件路径
+     * @param sheetName sheet页名称
+     * @return
+     * @throws IOException
+     * @throws OpenXML4JException
+     * @throws ParserConfigurationException
+     * @throws SAXException
+     */
+    public static List<List<String[]>> readerExcel(String path, String sheetName) throws IOException, OpenXML4JException, ParserConfigurationException, SAXException{
+        return readerExcel(new File(path), sheetName);
+    }
+
+    /**
+     * 读取xlsx文件
+     * @param file File对象
+     * @param sheetName sheet页名称
+     * @return
+     * @throws IOException
+     * @throws OpenXML4JException
+     * @throws ParserConfigurationException
+     * @throws SAXException
+     */
+    public static List<List<String[]>> readerExcel(File file, String sheetName) throws IOException, OpenXML4JException, ParserConfigurationException, SAXException {
+        OPCPackage              opcPackage      = OPCPackage.open(file, PackageAccess.READ);
+        ImportExcelUtil         importExcel     = getInstance(opcPackage, sheetName);
+        List<List<String[]>>    excelDatelist   = importExcel.process();
         opcPackage.close();
-        return list;
+        return excelDatelist;
     }
+    private List<List<String[]>> process() throws IOException, OpenXML4JException, ParserConfigurationException, SAXException {
+        XSSFReader                  xssfReader    = new XSSFReader(this.xlsxPackage);
+        List<String[]>              sheetDatalist = new ArrayList<>();
+        List<List<String[]>>        excelDataList = new ArrayList<>();
+        ReadOnlySharedStringsTable  strings       = new ReadOnlySharedStringsTable(this.xlsxPackage);
 
-    public List<List<String[]>> process() throws IOException, OpenXML4JException, ParserConfigurationException, SAXException {
-        List<List<String[]>> pDataList = new ArrayList();
-        ReadOnlySharedStringsTable strings = new ReadOnlySharedStringsTable(this.xlsxPackage);
-        XSSFReader xssfReader = new XSSFReader(this.xlsxPackage);
-        List<String[]> list = null;
-        StylesTable styles = xssfReader.getStylesTable();
-        XSSFReader.SheetIterator iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
+        StylesTable              styles = xssfReader.getStylesTable();
+        XSSFReader.SheetIterator iter   = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
         int index = 0;
         while (iter.hasNext()) {
-            InputStream stream = iter.next();
-            String sheetNameTemp = iter.getSheetName();
-            if (null != this.sheetName && "".equals(this.sheetName)) {
+            InputStream stream          = iter.next();
+            String      sheetNameTemp   = iter.getSheetName();
+            if (null != this.sheetName && !"".equals(this.sheetName)) {
                 if(this.sheetName.equals(sheetNameTemp)){
-                    list = processSheet(styles, strings, stream);
+                    sheetDatalist = processSheet(styles, strings, stream);
                     stream.close();
-                    ++index;
                 }
             } else {
-                list = processSheet(styles, strings, stream);
+                sheetDatalist = processSheet(styles, strings, stream);
                 stream.close();
-                ++index;
             }
-            pDataList.add(list);
+            excelDataList.add(sheetDatalist);
+            index ++;
         }
-        return pDataList;
+        return excelDataList;
     }
-    public List<String[]> processSheet(StylesTable styles, ReadOnlySharedStringsTable strings, InputStream sheetInputStream) throws IOException, ParserConfigurationException, SAXException {
+    private List<String[]> processSheet(StylesTable styles, ReadOnlySharedStringsTable strings, InputStream sheetInputStream) throws IOException, ParserConfigurationException, SAXException {
+        InputSource        sheetSource  = new InputSource(sheetInputStream);
+        MyXSSFSheetHandler handler      = new MyXSSFSheetHandler(styles, strings);
 
-        InputSource sheetSource = new InputSource(sheetInputStream);
-        SAXParserFactory saxFactory = SAXParserFactory.newInstance();
-        SAXParser saxParser = saxFactory.newSAXParser();
-        XMLReader sheetParser = saxParser.getXMLReader();
-        MyXSSFSheetHandler handler = new MyXSSFSheetHandler(styles, strings, this.minColumns, this.output);
+        SAXParserFactory   saxFactory   = SAXParserFactory.newInstance();
+        SAXParser          saxParser    = saxFactory.newSAXParser();
+        XMLReader          sheetParser  = saxParser.getXMLReader();
+        handler.setDataFormat("yyyyMMdd");
         sheetParser.setContentHandler(handler);
         sheetParser.parse(sheetSource);
         return handler.getRows();
     }
+//    public static void main(String[] args) throws Exception{
+//        List<List<String[]>> list = readerExcel("E:\\QQDownload\\603559825\\FileRecv\\201706-专资平台票房对账测试1-5 -2.xlsx", "专资数据-票房导入模板");
+//        System.out.println(list.size()+"---"+list.get(0).size());
+//    }
     public static void main(String[] args) throws Exception{
-        List<List<String[]>> list = readerExcel("E:\\QQDownload\\603559825\\FileRecv\\201706-专资平台票房对账测试1-5 -2.xlsx", "专资数据-票房导入模板", 13);
-        System.out.println(list.get(0).size());
+        List<List<String[]>> list = readerExcel("E:\\QQDownload\\603559825\\FileRecv\\201706-专资平台票房对账测试1-5-2.xlsx", "");
+        System.out.println(list.size()+"---"+list.get(0).size());
+        for(int i =0;i<list.size();i++){
+            System.out.println("------------第"+ i+1 +"页数据------------");
+            List<String[]> sheetDataList = list.get(i);
+            for(int j=0;j<sheetDataList.size();j++){
+                String[] rowData = sheetDataList.get(j);
+                for(int m=0;m<rowData.length;m++){
+                    System.out.print("|"+rowData[m]+"|");
+                }
+                System.out.println();
+            }
+        }
     }
 }
