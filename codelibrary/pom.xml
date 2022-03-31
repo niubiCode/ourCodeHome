@@ -34,7 +34,7 @@
 	
 	  	<properties>
 			<project_version>1.0.0</project_version>
-			<org_springframework_version_codelibrary>3.2.16.RELEASE</org_springframework_version_codelibrary>
+			<org_springframework_version_codelibrary>5.3.18</org_springframework_version_codelibrary>
 	
 			<!-- 文件拷贝时的编码 -->
 			<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
